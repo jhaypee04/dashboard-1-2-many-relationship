@@ -2,6 +2,49 @@ const express = require('express')
 const ejs = require('ejs')
 const mongoose = require('mongoose')
 
+// app
+const app = express()
+
+// set view engine
+app.set('view engine', 'ejs')
+
+// middlewares
+app.use('/assets', express.static('assets'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
+// handling the get routes
+app.get('/', (req, res)=>{
+    res.render('index')
+})
+app.get('/register', (req, res)=>{
+    res.render('register')
+})
+app.get('/login', (req, res)=>{
+    res.render('login')
+})
+app.get('/homepage', (req, res)=>{
+    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+})
+app.get('/dashboard', (req, res)=>{
+    res.render('dashboard')
+})
+app.get('/createNewClassroom', (req, res)=>{
+    res.render('createNewClassroom')
+})
+
+// handling the post routes
+app.post('/register', (req, res)=>{
+    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+})
+app.post('/login', (req, res)=>{
+    res.render('homepage')
+})
+
+// Listening to db
+const port = 3000
+app.listen(port,()=>console.log('App connected and listening to port: ', port))
+
 // connecting to mongodb
 mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
     .then(()=>console.log("connected to db"))
@@ -44,18 +87,4 @@ const run = async function(){
     console.log("\n>>Created Classroom:\n", Instructor)
 }
 
-run()
-
-
-
-
-// app
-const app = express()
-
-// set view engine
-app.set('view engine', 'ejs')
-
-// middlewares
-app.use('/assets', express.static('assets'))
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// run()

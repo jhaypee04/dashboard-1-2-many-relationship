@@ -8,7 +8,7 @@ const Attendance = mongoose.model(
             required: true
         },
         status: {
-            type: bool,
+            type: Boolean,
             required: true
         },
         dayOfAttendance: {
