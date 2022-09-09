@@ -35,16 +35,30 @@ app.get('/createNewClassroom', (req, res)=>{
 
 // handling the post routes
 app.post('/register', (req, res)=>{
+    const instructorNameFromUI = req.body.instructorName
+    const instructorEmailFromUI = req.body.instructorEmail
+    const instructorPasswordFromUI = req.body.instructorPassword
+    // Persisting to db
+    saveToInstructor(instructorNameFromUI,instructorEmailFromUI,instructorPasswordFromUI)
     res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
 })
 app.post('/login', (req, res)=>{
     res.render('homepage')
 })
 app.post('/createNewClassroom', (req, res)=>{
+    const classNameFromUI = req.body.className
+    const classDaysFromUI = req.body.classDays
+    const numberOfWeeksFromUI = req.body.numberOfWeeks
+    // Persisting to db
+    saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
     res.render('createNewClassroom')
 })
 app.post('/insertModule', (req, res)=>{
-    console.log(req.body)
+    const weekNoFromUI = req.body.weekNo
+    const dayOfModuleFromUI = req.body.dayOfModule
+    const titleOfModuleFromUI = req.body.titleOfModule
+    // Persisting to db
+    saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI)
     res.render('dashboard')
 })
 app.post('/markAttendance', (req, res)=>{
@@ -68,6 +82,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
 // models
 const db = require('./model/index')
 
+// create operation
 const createInstructor = function(instructor){
     return db.Instructors.create(instructor)
         .then(docInstructors=>{
@@ -75,31 +90,52 @@ const createInstructor = function(instructor){
             return docInstructors
         })
 }
-const createClassroom = function(classroomId, classroom){
+const createClassroom = function(classroom){
     return db.Classroom.create(classroom)
-        .then(docClassroom=>{
-            return db.Instructors.findByIdAndUpdate(
-                classroomId,
-                {
-                    $push: {
-                        classroom: docClassroom._id
-                    }
-                },
-                { new: true, useFindAndModify: false}
-            )
-        })
-}
+        .then(docClassroom=>console.log("\>>Created Classroom: ", docClassroom))
+    }
 
-const run = async function(){
-    var Instructor = await createInstructor({
+// read operation
+// const findInstructor = function(classroomId, classroom){
+//     return db.Instructors.findByIdAndUpdate(
+//         classroomId,
+//         {
+//             $push: {
+//                 classroom: docClassroom._id
+//             }
+//         },
+//         { new: true, useFindAndModify: false}
+//     )
+    
+// }
+    
+const saveToInstructor = async function(instructorName,instructorEmail,instructorPassword){
+    const Instructor = await createInstructor({
+        instructorName,
+        instructorEmail,
+        instructorPassword,
         classroom: [],
         students: [],
-        attendance: [],
-    })
-    Instructor = await createClassroom(Instructor._id, {
-        className: "Web Design and Development"
+        attendance: []
     })
     console.log("\n>>Created Classroom:\n", Instructor)
+    // return Instructor
 }
-
-// run()
+const saveToClassroom = async function(className,classDays,numberOfWeeks){
+    var Classroom = await createClassroom({
+        className,
+        classDays,
+        numberOfWeeks,
+        weeks: [],
+        students: []
+    })
+    console.log("\n>>Created Classroom:\n", Classroom)
+}
+const saveToWeek = async function(weekNo,dayOfModule,titleOfModule){
+    var Week = await createClassroom({
+        weekNo,
+        dayOfModule,
+        titleOfModule
+    })
+    console.log("\n>>Created Week:\n", Week)
+}
