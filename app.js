@@ -40,6 +40,21 @@ app.post('/register', (req, res)=>{
 app.post('/login', (req, res)=>{
     res.render('homepage')
 })
+app.post('/createNewClassroom', (req, res)=>{
+    res.render('createNewClassroom')
+})
+app.post('/insertModule', (req, res)=>{
+    console.log(req.body)
+    res.render('dashboard')
+})
+app.post('/markAttendance', (req, res)=>{
+    console.log(req.body)
+    res.render('dashboard')
+})
+app.post('/insertNewStudent', (req, res)=>{
+    console.log(req.body)
+    res.render('dashboard')
+})
 
 // Listening to db
 const port = 3000

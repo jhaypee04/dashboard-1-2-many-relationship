@@ -19,7 +19,7 @@
     </div>
     <br>
     <h1>Module form</h1>
-    <form action="/insertModule">
+    <form action="/insertModule" method="post">
         <label>
             Please select a week
             <select name="weekNo">
@@ -60,19 +60,19 @@
 
         <span>
             Students:
-            <input type="checkbox" name="checkedName">
+            <input type="checkbox" name="checkedName" value="Michael">
             Michael
-        <input type="checkbox" name="checkedName">
-        Chisom
-        <input type="checkbox" name="checkedName">
-        Wilson
+            <input type="checkbox" name="checkedName" value="Chisom">
+            Chisom
+            <input type="checkbox" name="checkedName" value="Wilson">
+            Wilson
         </span>
         <br>
         <label>
             Status:
-            <input type="radio" name="status">
+            <input type="radio" name="status" value="true">
             Present
-            <input type="radio" name="status">
+            <input type="radio" name="status" value="false">
             Absent
         </label>
         <br>
