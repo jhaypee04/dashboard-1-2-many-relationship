@@ -62,11 +62,23 @@ app.post('/insertModule', (req, res)=>{
     res.render('dashboard')
 })
 app.post('/markAttendance', (req, res)=>{
-    console.log(req.body)
+    const checkedNameFromUI = req.body.checkedName
+    const statusFromUI = req.body.status
+    const dayOfAttendanceFromUI = req.body.dayOfAttendance
+    // Persisting to db
+    saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI)
     res.render('dashboard')
 })
 app.post('/insertNewStudent', (req, res)=>{
-    console.log(req.body)
+    const studentNameFromUI = req.body.studentName
+    const studentEmailFromUI = req.body.studentEmail
+    const parentEmailFromUI = req.body.parentEmail
+    const parentPhoneNoFromUI = req.body.parentPhoneNo
+    const studentPhoneNoFromUI = req.body.studentPhoneNo
+    const genderFromUI = req.body.gender
+    const dobFromUI = req.body.dob
+    // Persisting to db
+    saveToStudent(studentNameFromUI,studentEmailFromUI,parentEmailFromUI,parentPhoneNoFromUI,studentPhoneNoFromUI,genderFromUI,dobFromUI)
     res.render('dashboard')
 })
 
@@ -93,21 +105,21 @@ const createInstructor = function(instructor){
 const createClassroom = function(classroom){
     return db.Classroom.create(classroom)
         .then(docClassroom=>console.log("\>>Created Classroom: ", docClassroom))
-    }
+}
+const createWeek = function(week){
+    return db.Weeks.create(week)
+        .then(docWeek=>console.log("\n>>Created Week:\n", docWeek))
+}
+const createAttendance = function(attendance){
+    return db.Attendance.create(attendance)
+        .then(docAttendance=>console.log("\n>>Created Attendance:\n", docAttendance))
+}
+const createStudent = function(student){
+    return db.Students.create(student)
+        .then(docStudent=>console.log("\n>>Created Student:\n", docStudent))
+}
 
-// read operation
-// const findInstructor = function(classroomId, classroom){
-//     return db.Instructors.findByIdAndUpdate(
-//         classroomId,
-//         {
-//             $push: {
-//                 classroom: docClassroom._id
-//             }
-//         },
-//         { new: true, useFindAndModify: false}
-//     )
-    
-// }
+
     
 const saveToInstructor = async function(instructorName,instructorEmail,instructorPassword){
     const Instructor = await createInstructor({
@@ -132,10 +144,44 @@ const saveToClassroom = async function(className,classDays,numberOfWeeks){
     console.log("\n>>Created Classroom:\n", Classroom)
 }
 const saveToWeek = async function(weekNo,dayOfModule,titleOfModule){
-    var Week = await createClassroom({
+    var Week = await createWeek({
         weekNo,
         dayOfModule,
         titleOfModule
     })
     console.log("\n>>Created Week:\n", Week)
 }
+const saveToAttendance = async function(checkedName,status,dayOfAttendance){
+    var Attendance = await createAttendance({
+        checkedName,
+        status,
+        dayOfAttendance
+    })
+    console.log("\n>>Created Attendance:\n", Attendance)
+}
+const saveToStudent = async function(studentName,studentEmail,parentEmail,parentPhoneNo,studentPhoneNo,gender,dob){
+    var Student = await createStudent({
+        studentName,
+        studentEmail,
+        parentEmail,
+        parentPhoneNo,
+        studentPhoneNo,
+        gender,
+        dob
+    })
+    console.log("\n>>Created Student:\n", Student)
+}
+
+// read operation
+// const findInstructor = function(classroomId, classroom){
+//     return db.Instructors.findByIdAndUpdate(
+//         classroomId,
+//         {
+//             $push: {
+//                 classroom: docClassroom._id
+//             }
+//         },
+//         { new: true, useFindAndModify: false}
+//     )
+    
+// }
