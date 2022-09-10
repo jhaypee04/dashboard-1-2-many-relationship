@@ -81,8 +81,11 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
 
     // Persisting to db
     const SavedClassroom = await saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
+    const classroomId = SavedClassroom._id
+    const refName = "classroom"
+    option = {classroom: classroomId}
 
-    findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, SavedClassroom)
+    findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
 
     res.render('createNewClassroom')
@@ -241,18 +244,18 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
     console.log("\n>>Created Student:\n", Student)
 }
 
-function findInstructorAndUpdate(email, classroom){
-    console.log(`Email from app.post: ${email}, Classroom from app.post: ${classroom}. Outside app.post`)
+function findInstructorAndUpdate(email, object){
+    // console.log(`Email from app.post: ${email}, Classroom from app.post: ${object.classroom}. Outside app.post`)
     db.Instructors.findOne({instructorEmail: email})
         .then((docInstructor)=>{
-            console.log("docInstructor" + docInstructor)
+            // console.log("docInstructor" + docInstructor)
             const InstructorId = docInstructor._id
-            const ClassroomId = classroom._id
-            console.log("InstructorId: "+`ObjectId(${InstructorId})`)
-            console.log("Classroom ID: "+ `ObjectId(${ClassroomId})`)
+            // // const ClassroomId = classroom._id
+            // console.log("InstructorId: "+`ObjectId(${InstructorId})`)
+            // console.log("Classroom ID: "+ `ObjectId(${object.classroom})`)
             db.Instructors.findByIdAndUpdate(
                 InstructorId,
-                { $push: { classroom: ClassroomId }},
+                { $push: object},
                 { new: true, useFindAndModify: false },
                 function(err){
                     if(err){
@@ -265,18 +268,3 @@ function findInstructorAndUpdate(email, classroom){
             )
         })
 }
-
-// const getClassroomAndUpdateInstructor = (classroom)=>{
-    // read && update operation
-    // function findInstructor (InstructorId) {
-    //     db.Instructors.findByIdAndUpdate(
-    //         InstructorId,
-    //         {
-    //             $push: {
-    //                 classroom: classroom._id
-    //             }
-    //         },
-    //         { new: true, useFindAndModify: false}
-    //     )
-    // }
-// }
