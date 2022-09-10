@@ -104,7 +104,7 @@ const createInstructor = function(instructor){
 }
 const createClassroom = function(classroom){
     return db.Classroom.create(classroom)
-        .then(docClassroom=>console.log("\>>Created Classroom: ", docClassroom))
+        .then(docClassroom=>docClassroom)
 }
 const createWeek = function(week){
     return db.Weeks.create(week)
@@ -130,7 +130,7 @@ const saveToInstructor = async function(instructorName,instructorEmail,instructo
         students: [],
         attendance: []
     })
-    console.log("\n>>Created Classroom:\n", Instructor)
+    console.log("\n>>Created Instructor:\n", Instructor)
     // return Instructor
 }
 const saveToClassroom = async function(className,classDays,numberOfWeeks){
@@ -141,7 +141,8 @@ const saveToClassroom = async function(className,classDays,numberOfWeeks){
         weeks: [],
         students: []
     })
-    console.log("\n>>Created Classroom:\n", Classroom)
+    console.log("\n>>saved to Classroom:\n", Classroom)
+    // findInstructor(saveToInstructor()._id, Classroom)
 }
 const saveToWeek = async function(weekNo,dayOfModule,titleOfModule){
     var Week = await createWeek({
@@ -172,16 +173,15 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
     console.log("\n>>Created Student:\n", Student)
 }
 
-// read operation
-// const findInstructor = function(classroomId, classroom){
-//     return db.Instructors.findByIdAndUpdate(
-//         classroomId,
+// read && update operation
+// function findInstructor (InstructorId, classroom) {
+//     db.Instructors.findByIdAndUpdate(
+//         InstructorId,
 //         {
 //             $push: {
-//                 classroom: docClassroom._id
+//                 classroom: classroom._id
 //             }
 //         },
 //         { new: true, useFindAndModify: false}
 //     )
-    
 // }
