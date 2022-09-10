@@ -73,18 +73,11 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     const numberOfWeeksFromUI = req.body.numberOfWeeks
     // Email from payload of JWT
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
-    console.log(InstructorEmailFromPayLoadOfJWT)
-    
-    // Reading from db
-    
-    // const Email = getInstructorEmail(InstructorEmailFromPayLoadOfJWT)
-
     // Persisting to db
     const SavedClassroom = await saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
     const classroomId = SavedClassroom._id
-    const refName = "classroom"
     option = {classroom: classroomId}
-
+    // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
 
@@ -98,15 +91,21 @@ app.post('/insertModule', (req, res)=>{
     saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI)
     res.render('dashboard')
 })
-app.post('/markAttendance', (req, res)=>{
+app.post('/markAttendance', protectRoute, async (req, res)=>{
     const checkedNameFromUI = req.body.checkedName
     const statusFromUI = req.body.status
     const dayOfAttendanceFromUI = req.body.dayOfAttendance
+    // Email from payload of JWT
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     // Persisting to db
-    saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI)
+    const SavedAttendance = await saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI)
+    const attendanceId = SavedAttendance._id
+    option = {attendance: attendanceId}
+    // Updating to Instructor collection
+    findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     res.render('dashboard')
 })
-app.post('/insertNewStudent', (req, res)=>{
+app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     const studentNameFromUI = req.body.studentName
     const studentEmailFromUI = req.body.studentEmail
     const parentEmailFromUI = req.body.parentEmail
@@ -114,8 +113,14 @@ app.post('/insertNewStudent', (req, res)=>{
     const studentPhoneNoFromUI = req.body.studentPhoneNo
     const genderFromUI = req.body.gender
     const dobFromUI = req.body.dob
+    // Email from payload of JWT
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     // Persisting to db
-    saveToStudent(studentNameFromUI,studentEmailFromUI,parentEmailFromUI,parentPhoneNoFromUI,studentPhoneNoFromUI,genderFromUI,dobFromUI)
+    const SavedStudent = await saveToStudent(studentNameFromUI,studentEmailFromUI,parentEmailFromUI,parentPhoneNoFromUI,studentPhoneNoFromUI,genderFromUI,dobFromUI)
+    const studentId = SavedStudent._id
+    option = {students: studentId}
+    // Updating to Instructor collection
+    findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     res.render('dashboard')
 })
 
@@ -163,7 +168,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
 // models
 const db = require('./model/index')
 
-// create operation
+// Create operation
 const createInstructor = function(instructor){
     return db.Instructors.create(instructor)
         .then(docInstructors=>{
@@ -181,15 +186,15 @@ const createWeek = function(week){
 }
 const createAttendance = function(attendance){
     return db.Attendance.create(attendance)
-        .then(docAttendance=>console.log("\n>>Created Attendance:\n", docAttendance))
+        .then(docAttendance=>docAttendance)
 }
 const createStudent = function(student){
     return db.Students.create(student)
-        .then(docStudent=>console.log("\n>>Created Student:\n", docStudent))
+        .then(docStudent=>docStudent)
 }
 
 
-    
+// Create operation- Schema Construct
 const saveToInstructor = async function(instructorName,instructorEmail,instructorPassword){
     const Instructor = await createInstructor({
         instructorName,
@@ -200,9 +205,6 @@ const saveToInstructor = async function(instructorName,instructorEmail,instructo
         attendance: []
     })
     console.log("\n>>Created Instructor:\n", Instructor)
-    // findInstructor(Instructor._id)
-    // delete below if using above
-    // return Instructor
 }
 const saveToClassroom = async function(className,classDays,numberOfWeeks){
     var Classroom = await createClassroom({
@@ -230,6 +232,7 @@ const saveToAttendance = async function(checkedName,status,dayOfAttendance){
         dayOfAttendance
     })
     console.log("\n>>Created Attendance:\n", Attendance)
+    return Attendance
 }
 const saveToStudent = async function(studentName,studentEmail,parentEmail,parentPhoneNo,studentPhoneNo,gender,dob){
     var Student = await createStudent({
@@ -242,17 +245,15 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
         dob
     })
     console.log("\n>>Created Student:\n", Student)
+    return Student
 }
 
+// Read and Update Operation
 function findInstructorAndUpdate(email, object){
     // console.log(`Email from app.post: ${email}, Classroom from app.post: ${object.classroom}. Outside app.post`)
     db.Instructors.findOne({instructorEmail: email})
         .then((docInstructor)=>{
-            // console.log("docInstructor" + docInstructor)
             const InstructorId = docInstructor._id
-            // // const ClassroomId = classroom._id
-            // console.log("InstructorId: "+`ObjectId(${InstructorId})`)
-            // console.log("Classroom ID: "+ `ObjectId(${object.classroom})`)
             db.Instructors.findByIdAndUpdate(
                 InstructorId,
                 { $push: object},
