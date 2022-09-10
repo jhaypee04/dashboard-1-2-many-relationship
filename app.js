@@ -1,3 +1,6 @@
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 const express = require('express')
 const ejs = require('ejs')
 const mongoose = require('mongoose')
@@ -10,6 +13,7 @@ app.set('view engine', 'ejs')
 
 // middlewares
 app.use('/assets', express.static('assets'))
+app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -23,7 +27,9 @@ app.get('/register', (req, res)=>{
 app.get('/login', (req, res)=>{
     res.render('login')
 })
-app.get('/homepage', (req, res)=>{
+app.get('/homepage', protectRoute, (req, res)=>{
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
+    console.log(InstructorEmailFromPayLoadOfJWT)
     res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
 })
 app.get('/dashboard', (req, res)=>{
@@ -32,25 +38,53 @@ app.get('/dashboard', (req, res)=>{
 app.get('/createNewClassroom', (req, res)=>{
     res.render('createNewClassroom')
 })
+app.get('/logout', (req, res)=>{
+    res.clearCookie('token')
+    res.redirect('/')
+})
 
 // handling the post routes
-app.post('/register', (req, res)=>{
+app.post('/register', async (req, res)=>{
     const instructorNameFromUI = req.body.instructorName
     const instructorEmailFromUI = req.body.instructorEmail
     const instructorPasswordFromUI = req.body.instructorPassword
+    // Salting the password
+    const saltNo = 10
+    const genSalt = await bcrypt.genSalt(saltNo)
+    const hashedPassword = await bcrypt.hash(instructorPasswordFromUI, genSalt)
     // Persisting to db
-    saveToInstructor(instructorNameFromUI,instructorEmailFromUI,instructorPasswordFromUI)
+    saveToInstructor(instructorNameFromUI,instructorEmailFromUI,hashedPassword)
+
+    const token = await makeToken(instructorEmailFromUI)
+    console.log(token)
+    // make httpOnly:true later
+    res.cookie('token', token, {httpOnly: false})
     res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
 })
 app.post('/login', (req, res)=>{
-    res.render('homepage')
+    const instructorEmailFromUI = req.body.instructorEmail
+    const instructorPasswordFromUI = req.body.instructorPassword
+    console.log(instructorEmailFromUI,instructorPasswordFromUI)
+    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
 })
-app.post('/createNewClassroom', (req, res)=>{
+app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     const classNameFromUI = req.body.className
     const classDaysFromUI = req.body.classDays
     const numberOfWeeksFromUI = req.body.numberOfWeeks
+    // Email from payload of JWT
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
+    console.log(InstructorEmailFromPayLoadOfJWT)
+    
+    // Reading from db
+    
+    // const Email = getInstructorEmail(InstructorEmailFromPayLoadOfJWT)
+
     // Persisting to db
-    saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
+    const SavedClassroom = await saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
+
+    findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, SavedClassroom)
+    // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
+
     res.render('createNewClassroom')
 })
 app.post('/insertModule', (req, res)=>{
@@ -82,9 +116,41 @@ app.post('/insertNewStudent', (req, res)=>{
     res.render('dashboard')
 })
 
+
+
 // Listening to db
 const port = 3000
 app.listen(port,()=>console.log('App connected and listening to port: ', port))
+
+// jwt
+const secretKey = 'Thisisatest'
+async function makeToken(emailFromUI){
+    const payload = {
+        instructor: {
+            email: emailFromUI
+        }
+    }
+    const token = await jwt.sign(payload,secretKey,{expiresIn: '3600s'})
+    return token
+}
+
+// protecting routes
+function protectRoute(req, res, next){
+    const token = req.cookies.token
+    // console.log(`Token: ${req.cookies.token}`)
+    try{
+        req.user = jwt.verify(token,secretKey)
+        // const instructorEmail =  req.user.instructor.email
+        // console.log(instructorEmail)
+        next()
+    }
+    catch(err){
+        res.clearCookie('token')
+        return res.redirect('/')
+        console.log('Error: ', err)
+    }
+}
+
 
 // connecting to mongodb
 mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
@@ -131,6 +197,8 @@ const saveToInstructor = async function(instructorName,instructorEmail,instructo
         attendance: []
     })
     console.log("\n>>Created Instructor:\n", Instructor)
+    // findInstructor(Instructor._id)
+    // delete below if using above
     // return Instructor
 }
 const saveToClassroom = async function(className,classDays,numberOfWeeks){
@@ -142,7 +210,7 @@ const saveToClassroom = async function(className,classDays,numberOfWeeks){
         students: []
     })
     console.log("\n>>saved to Classroom:\n", Classroom)
-    // findInstructor(saveToInstructor()._id, Classroom)
+    return Classroom
 }
 const saveToWeek = async function(weekNo,dayOfModule,titleOfModule){
     var Week = await createWeek({
@@ -173,15 +241,42 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
     console.log("\n>>Created Student:\n", Student)
 }
 
-// read && update operation
-// function findInstructor (InstructorId, classroom) {
-//     db.Instructors.findByIdAndUpdate(
-//         InstructorId,
-//         {
-//             $push: {
-//                 classroom: classroom._id
-//             }
-//         },
-//         { new: true, useFindAndModify: false}
-//     )
+function findInstructorAndUpdate(email, classroom){
+    console.log(`Email from app.post: ${email}, Classroom from app.post: ${classroom}. Outside app.post`)
+    db.Instructors.findOne({instructorEmail: email})
+        .then((docInstructor)=>{
+            console.log("docInstructor" + docInstructor)
+            const InstructorId = docInstructor._id
+            const ClassroomId = classroom._id
+            console.log("InstructorId: "+`ObjectId(${InstructorId})`)
+            console.log("Classroom ID: "+ `ObjectId(${ClassroomId})`)
+            db.Instructors.findByIdAndUpdate(
+                InstructorId,
+                { $push: { classroom: ClassroomId }},
+                { new: true, useFindAndModify: false },
+                function(err){
+                    if(err){
+                        console.log("Update Error: ", err)
+                    }
+                    else{
+                        console.log("Update Success")
+                    }
+                }
+            )
+        })
+}
+
+// const getClassroomAndUpdateInstructor = (classroom)=>{
+    // read && update operation
+    // function findInstructor (InstructorId) {
+    //     db.Instructors.findByIdAndUpdate(
+    //         InstructorId,
+    //         {
+    //             $push: {
+    //                 classroom: classroom._id
+    //             }
+    //         },
+    //         { new: true, useFindAndModify: false}
+    //     )
+    // }
 // }
