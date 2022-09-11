@@ -122,9 +122,10 @@ app.post('/markAttendance', protectRoute, async (req, res)=>{
     // Persisting to db
     const SavedAttendance = await saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI)
     const attendanceId = SavedAttendance._id
-    option = {attendance: attendanceId}
+    option = {attendances: attendanceId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
+
     res.render('dashboard')
 })
 app.post('/insertNewStudent', protectRoute, async (req, res)=>{
@@ -143,8 +144,7 @@ app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     option = {students: studentId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
-    // Query Classroom
-    db.Classroom.findOne({className})
+    
     res.render('dashboard')
 })
 
@@ -281,17 +281,18 @@ function findInstructorAndUpdate(email, object){
     console.log("collectionName: ", '"' + collectionName +'"')
     // console.log(`Email from app.post: ${email}, Classroom from app.post: ${object.classroom}. Outside app.post`)
     db.Instructors.findOne({instructorEmail: email})
-        .then((docInstructor)=>{
-            const InstructorId = docInstructor._id
-            db.Instructors.findByIdAndUpdate(
-                InstructorId,
-                { $push: object},
-                { new: true, useFindAndModify: false }
-            )
-            .populate(collectionName).then((result)=>{
-                console.log("result: "+result);
-            }).catch((err)=>{
-                console.log("err: "+err);
-            })
+    .then((docInstructor)=>{
+        const InstructorId = docInstructor._id
+        db.Instructors.findByIdAndUpdate(
+            InstructorId,
+            { $push: object},
+            { new: true, useFindAndModify: false }
+        )
+        .populate(collectionName)
+        .then((result)=>{
+            console.log("result: "+result);
+        }).catch((err)=>{
+            console.log("err: "+err);
         })
+    })
 }
