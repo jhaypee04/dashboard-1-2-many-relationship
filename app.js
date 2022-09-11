@@ -134,17 +134,24 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     option = {classrooms: classroomId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
-    // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
+    // Updating to Attendance collection
+    findAttendanceAndUpdate(classNameFromUI, option)
 
+    // to be more efficient use res.render with cookies to the pass the className
     res.redirect('homepage')
 })
-app.post('/insertModule', protectRoute, (req, res)=>{
+app.post('/insertModule', protectRoute, async (req, res)=>{
     const weekNoFromUI = req.body.weekNo
     const dayOfModuleFromUI = req.body.dayOfModule
     const titleOfModuleFromUI = req.body.titleOfModule
     const classNameFromUI = req.body.className
     // Persisting to db
-    saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI,classNameFromUI)
+    const SavedWeek = await saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI,classNameFromUI)
+    // getting Weeks id
+    const weekId = SavedWeek._id
+    option = {weeks: weekId}
+    // Updating to Classroom collection
+    findClassroomAndUpdate(classNameFromUI,option)
     // className
     const className = classNameFromUI
     res.render('dashboard', {className})
@@ -162,6 +169,8 @@ app.post('/markAttendance', protectRoute, async (req, res)=>{
     option = {attendances: attendanceId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
+    // Updating to Student collection
+    findStudentAndUpdate(classNameFromUI, option)
     // className
     const className = classNameFromUI
     res.render('dashboard', {className})
@@ -183,14 +192,12 @@ app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     option = {students: studentId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
+    // Updating to Classroom collection
+    findClassroomAndUpdate(classNameFromUI,option)
     // className
     const className = classNameFromUI
     res.render('dashboard', {className})
 })
-
-
-
-
 
 // jwt
 const secretKey = 'Thisisatest'
@@ -221,8 +228,6 @@ function protectRoute(req, res, next){
     }
 }
 
-
-
 // Create operation
 const createInstructor = function(instructor){
     return db.Instructors.create(instructor)
@@ -237,7 +242,7 @@ const createClassroom = function(classroom){
 }
 const createWeek = function(week){
     return db.Weeks.create(week)
-        .then(docWeek=>console.log("\n>>Created Week:\n", docWeek))
+        .then(docWeek=> docWeek)
 }
 const createAttendance = function(attendance){
     return db.Attendance.create(attendance)
@@ -247,7 +252,6 @@ const createStudent = function(student){
     return db.Students.create(student)
         .then(docStudent=>docStudent)
 }
-
 
 // Create operation- Schema Construct
 const saveToInstructor = async function(instructorName,instructorEmail,instructorPassword){
@@ -280,6 +284,7 @@ const saveToWeek = async function(weekNo,dayOfModule,titleOfModule,className){
         className
     })
     console.log("\n>>Created Week:\n", Week)
+    return Week
 }
 const saveToAttendance = async function(checkedName,status,dayOfAttendance,className){
     var Attendance = await createAttendance({
@@ -318,10 +323,72 @@ function findInstructorAndUpdate(email, object){
             { new: true, useFindAndModify: false },
             function(err){
                 if(err){
-                    console.log("Update Error: "+ err)
+                    console.log("Instructor Update Error: "+ err)
                 }
                 else{
-                    console.log("Update success")
+                    console.log("Instructor Update success")
+                }
+            }
+        )
+    })
+}
+function findClassroomAndUpdate(className,object){
+    // console.log( `ClassName from app.post: ${className}, Weeks from app.post: ${object.weeks}. Outside app.post`)
+    db.Classroom.findOne({className})
+    .then((docClassroom)=>{
+        const ClassroomId = docClassroom._id
+        db.Classroom.findByIdAndUpdate(
+            ClassroomId,
+            { $push: object},
+            { new: true, useFindAndModify: false },
+            function(err){
+                if(err){
+                console.log("Classroom Update Error: " + err)
+                }
+                else{
+                    console.log("Classroom Update success")
+                }
+            }
+        )
+    })
+}
+function findStudentAndUpdate(className,object){
+    // console.log( `className from app.post: ${className}, attendance from app.post: ${object.attendances}. Outside app.post`)
+    db.Students.findOne({className})
+    .then((docStudent)=>{
+        console.log(docStudent)
+        const StudentId = docStudent._id
+        db.Students.findByIdAndUpdate(
+            StudentId,
+            { $push: object},
+            { new: true, useFindAndModify: false },
+            function(err){
+                if(err){
+                console.log("Student Update Error: " + err)
+                }
+                else{
+                    console.log("Student Update success")
+                }
+            }
+        )
+    })
+}
+function findAttendanceAndUpdate(className,object){
+    console.log( `className from app.post: ${className}, classrooms from app.post: ${object.classrooms}. Outside app.post`)
+    db.Attendance.findOne({className})
+    .then((docAttendance)=>{
+        console.log("docAttendance: " + docAttendance)
+        const AttendanceId = docAttendance._id
+        db.Attendance.findByIdAndUpdate(
+            AttendanceId,
+            { $push: object},
+            { new: true, useFindAndModify: false },
+            function(err){
+                if(err){
+                console.log("Attendance Update Error: " + err)
+                }
+                else{
+                    console.log("Attendance Update success")
                 }
             }
         )

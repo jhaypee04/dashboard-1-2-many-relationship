@@ -35,7 +35,7 @@ const Students = mongoose.model(
             type: String,
             required: true
         },
-        attendance: [
+        attendances: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'attendance'

@@ -19,7 +19,7 @@ const Attendance = mongoose.model(
             type: String,
             required: true
         },
-        classroom: [
+        classrooms: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'classroom'
