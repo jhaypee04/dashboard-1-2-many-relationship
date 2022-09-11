@@ -81,11 +81,7 @@ app.post('/register', async (req, res)=>{
     // Persisting to db
     saveToInstructor(instructorNameFromUI,instructorEmailFromUI,hashedPassword)
 
-    const token = await makeToken(instructorEmailFromUI)
-    console.log(token)
-    // make httpOnly:true later
-    res.cookie('token', token, {httpOnly: false})
-    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+   res.render('login')
 })
 app.post('/login', (req, res)=>{
     const instructorEmailFromUI = req.body.instructorEmail
@@ -108,15 +104,13 @@ app.post('/login', (req, res)=>{
                     // make httpOnly:true later
                     res.cookie('token', token, {httpOnly: false})
                                     // Read operations
-                    // QUERIES I DO NOT NEED FOR NOW!!!
-                    // const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
-                    // const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
                     const getClassrooms = await getInstructor(InstructorEmailFromDB, 'classrooms')
                     // Accessing data from database
+                    const instructorName = getClassrooms.instructorName
                     const className = getClassrooms.classrooms
-                    console.log("className: "+className)
+                    console.log(`instructorName:  ${instructorName}  className: ${className}`)
                     
-                    res.render('homepage', { className })
+                    res.render('homepage', { className,instructorName })
                 }
                 else{
                     res.redirect('/register')
