@@ -4,9 +4,20 @@ const cookieParser = require('cookie-parser')
 const express = require('express')
 const ejs = require('ejs')
 const mongoose = require('mongoose')
+// models
+const db = require('./model/index')
 
-// app
+// connecting to mongodb
+mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
+    .then(()=>console.log("connected to db"))
+    .catch(err=>console.log('Error: ', err))
+
+// Express app
 const app = express()
+
+// Listening to db
+const port = 3000
+app.listen(port,()=>console.log('App connected and listening to port: ', port))
 
 // set view engine
 app.set('view engine', 'ejs')
@@ -28,11 +39,27 @@ app.get('/login', (req, res)=>{
     res.render('login')
 })
 app.get('/homepage', protectRoute, (req, res)=>{
+    // Email from payload of JWT
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     console.log(InstructorEmailFromPayLoadOfJWT)
+    // Read operation
+    const getClassrooms = getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    const getStudents = getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+    const getAttendance = getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+    
     res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
 })
-app.get('/dashboard', (req, res)=>{
+app.get('/dashboard', protectRoute, async(req, res)=>{
+    // Email from payload of JWT
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
+    console.log(InstructorEmailFromPayLoadOfJWT)
+    // Read operation
+    const getClassroom = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    const getStudents = getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+    const getAttendance = getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+
+    console.log("getClassroom: "+getClassroom)
+    
     res.render('dashboard')
 })
 app.get('/createNewClassroom', (req, res)=>{
@@ -105,7 +132,7 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
 
     res.render('createNewClassroom')
 })
-app.post('/insertModule', (req, res)=>{
+app.post('/insertModule', protectRoute, (req, res)=>{
     const weekNoFromUI = req.body.weekNo
     const dayOfModuleFromUI = req.body.dayOfModule
     const titleOfModuleFromUI = req.body.titleOfModule
@@ -150,9 +177,7 @@ app.post('/insertNewStudent', protectRoute, async (req, res)=>{
 
 
 
-// Listening to db
-const port = 3000
-app.listen(port,()=>console.log('App connected and listening to port: ', port))
+
 
 // jwt
 const secretKey = 'Thisisatest'
@@ -184,13 +209,6 @@ function protectRoute(req, res, next){
 }
 
 
-// connecting to mongodb
-mongoose.connect('mongodb://127.0.0.1:27017/loctech_attendance_app')
-    .then(()=>console.log("connected to db"))
-    .catch(err=>console.log('Error: ', err))
-
-// models
-const db = require('./model/index')
 
 // Create operation
 const createInstructor = function(instructor){
@@ -274,11 +292,6 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
 
 // Read and Update Operation
 function findInstructorAndUpdate(email, object){
-    var collectionName;
-    for(var prop in object){
-        collectionName = prop
-    }
-    console.log("collectionName: ", '"' + collectionName +'"')
     // console.log(`Email from app.post: ${email}, Classroom from app.post: ${object.classroom}. Outside app.post`)
     db.Instructors.findOne({instructorEmail: email})
     .then((docInstructor)=>{
@@ -286,13 +299,26 @@ function findInstructorAndUpdate(email, object){
         db.Instructors.findByIdAndUpdate(
             InstructorId,
             { $push: object},
-            { new: true, useFindAndModify: false }
+            { new: true, useFindAndModify: false },
+            function(err){
+                if(err){
+                    console.log("Update Error: "+ err)
+                }
+                else{
+                    console.log("Update success")
+                }
+            }
         )
-        .populate(collectionName)
-        .then((result)=>{
-            console.log("result: "+result);
-        }).catch((err)=>{
-            console.log("err: "+err);
-        })
+    })
+}
+// Read and populate operations
+function getInstructor(instructorEmail, collectionName){
+    return db.Instructors.findOne({instructorEmail})
+    .populate(collectionName)
+    .then((instructor)=>{
+        // console.log("result: "+instructor)
+        return instructor
+    }).catch((err)=>{
+        console.log("err: "+err)
     })
 }
