@@ -65,7 +65,29 @@ app.post('/login', (req, res)=>{
     const instructorEmailFromUI = req.body.instructorEmail
     const instructorPasswordFromUI = req.body.instructorPassword
     console.log(instructorEmailFromUI,instructorPasswordFromUI)
-    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+    // retrieving password from db
+    db.Instructors.findOne({ instructorEmail: instructorEmailFromUI })
+        .then((instructor)=>{
+            console.log("Instructor from db in login: ", instructor)
+            // comparing password from frontend with backend
+            bcrypt.compare(instructorPasswordFromUI, instructor.instructorPassword, async (err, data)=>{
+                if(err){
+                    console.log(err)
+                }
+                if(data){
+                    console.log("Login Details are: ", data)
+                    const token = await makeToken(instructor.instructorEmail)
+                    console.log(token)
+                    // make httpOnly:true later
+                    res.cookie('token', token, {httpOnly: false})
+                    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+                }
+                else{
+                    res.redirect('/register')
+                    console.log('Wrong Password')
+                }
+            })
+        })
 })
 app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     const classNameFromUI = req.body.className
@@ -76,7 +98,7 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     // Persisting to db
     const SavedClassroom = await saveToClassroom(classNameFromUI,classDaysFromUI,numberOfWeeksFromUI)
     const classroomId = SavedClassroom._id
-    option = {classroom: classroomId}
+    option = {classrooms: classroomId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
@@ -121,6 +143,8 @@ app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     option = {students: studentId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
+    // Query Classroom
+    db.Classroom.findOne({className})
     res.render('dashboard')
 })
 
@@ -250,6 +274,11 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
 
 // Read and Update Operation
 function findInstructorAndUpdate(email, object){
+    var collectionName;
+    for(var prop in object){
+        collectionName = prop
+    }
+    console.log("collectionName: ", '"' + collectionName +'"')
     // console.log(`Email from app.post: ${email}, Classroom from app.post: ${object.classroom}. Outside app.post`)
     db.Instructors.findOne({instructorEmail: email})
         .then((docInstructor)=>{
@@ -257,15 +286,12 @@ function findInstructorAndUpdate(email, object){
             db.Instructors.findByIdAndUpdate(
                 InstructorId,
                 { $push: object},
-                { new: true, useFindAndModify: false },
-                function(err){
-                    if(err){
-                        console.log("Update Error: ", err)
-                    }
-                    else{
-                        console.log("Update Success")
-                    }
-                }
+                { new: true, useFindAndModify: false }
             )
+            .populate(collectionName).then((result)=>{
+                console.log("result: "+result);
+            }).catch((err)=>{
+                console.log("err: "+err);
+            })
         })
 }
