@@ -5,6 +5,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <style>
+        .hidden{
+            display:none;
+        }
+    </style>
 </head>
 <body>
     <h1>Dashboard</h1>
@@ -20,6 +25,8 @@
         <br>
     </div>
     <br>
+    <!-- ClassName: -->
+    <h1>Class name: <%= className %></h1>
     <h1>Module form</h1>
     <form action="/insertModule" method="post">
         <label>
@@ -53,6 +60,10 @@
             <input type="text" name="titleOfModule">
         </label>
         <br>
+        <label class="hidden">
+            Hidden input
+            <input type="hidden" name="className" value="<%= className %>" >
+        </label>
         <br>
         <input type="submit">
     </form>
@@ -89,6 +100,11 @@
                 <option value="saturday">Saturday</option>
                 <option value="sunday">Sunday</option>
             </select>
+        </label>
+        <br>
+        <label class="hidden">
+            Hidden input
+            <input type="hidden" name="className" value="<%= className %>" >
         </label>
         <br>
         <input type="submit">
@@ -132,6 +148,12 @@
         <label>
             Date of Birth:
             <input type="date" name="dob">
+        </label>
+        <br>
+        <br>
+        <label class="hidden">
+            Hidden input
+            <input type="hidden" name="className" value="<%= className %>" >
         </label>
         <br>
         <input type="submit">

@@ -15,6 +15,10 @@ const Attendance = mongoose.model(
             type: String,
             required: true
         },
+        className: {
+            type: String,
+            required: true
+        },
         classroom: [
             {
                 type: mongoose.Schema.Types.ObjectId,

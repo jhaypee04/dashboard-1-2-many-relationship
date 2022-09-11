@@ -14,6 +14,10 @@ const Weeks = mongoose.model(
         titleOfModule: {
             type: String,
             required: true
+        },
+        className: {
+            type: String,
+            required: true
         }
     })
 )

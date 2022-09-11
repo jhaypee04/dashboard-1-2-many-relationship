@@ -21,10 +21,11 @@
     </div>
     <br>
     <div class="container">
-        <% array.forEach(element => { %>
+        <% className.forEach(element => { %>
          <div class="cards">
-            <a href="/dashboard">
-                <%= element %> 
+            <!-- params -->
+            <a href="<%= `/dashboard/${element.className}` %>">
+                <%= element.className %> 
             </a>
          </div>
         <% }) %>

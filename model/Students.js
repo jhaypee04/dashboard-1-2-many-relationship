@@ -31,6 +31,10 @@ const Students = mongoose.model(
             type: Date,
             required: true
         },
+        className: {
+            type: String,
+            required: true
+        },
         attendance: [
             {
                 type: mongoose.Schema.Types.ObjectId,

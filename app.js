@@ -38,27 +38,44 @@ app.get('/register', (req, res)=>{
 app.get('/login', (req, res)=>{
     res.render('login')
 })
-app.get('/homepage', protectRoute, (req, res)=>{
+app.get('/homepage', protectRoute, async(req, res)=>{
     // Email from payload of JWT
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     console.log(InstructorEmailFromPayLoadOfJWT)
-    // Read operation
-    const getClassrooms = getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
-    const getStudents = getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
-    const getAttendance = getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+                // Read operations
+    // QUERIES I DO NOT NEED FOR NOW!!!
+    // const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+    // const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+    const getClassrooms = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    // Accessing data from database
+    const className = getClassrooms.classrooms
+    console.log("className: "+className)
     
-    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+    res.render('homepage', { className })
+})
+
+app.get('/dashboard/:className', (req, res)=>{
+    const className = req.params.className
+    console.log(className, 'kkkkkkkkk')
+    res.render('dashboard', {className})
 })
 app.get('/dashboard', protectRoute, async(req, res)=>{
     // Email from payload of JWT
+
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     console.log(InstructorEmailFromPayLoadOfJWT)
     // Read operation
-    const getClassroom = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
-    const getStudents = getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
-    const getAttendance = getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+    const s = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+    const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
 
-    console.log("getClassroom: "+getClassroom)
+    // console.log("getClassrooms: "+getClassrooms)
+    // console.log("getStudents: "+getStudents)
+    // console.log("getAttendance: "+getAttendance)
+    // Accessing data from database
+    const getClassrooms = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    const className = getClassrooms.classrooms
+    console.log("className: "+className)
     
     res.render('dashboard')
 })
@@ -95,6 +112,7 @@ app.post('/login', (req, res)=>{
     // retrieving password from db
     db.Instructors.findOne({ instructorEmail: instructorEmailFromUI })
         .then((instructor)=>{
+            const InstructorEmailFromDB = instructor.instructorEmail
             console.log("Instructor from db in login: ", instructor)
             // comparing password from frontend with backend
             bcrypt.compare(instructorPasswordFromUI, instructor.instructorPassword, async (err, data)=>{
@@ -103,11 +121,20 @@ app.post('/login', (req, res)=>{
                 }
                 if(data){
                     console.log("Login Details are: ", data)
-                    const token = await makeToken(instructor.instructorEmail)
+                    const token = await makeToken(InstructorEmailFromDB)
                     console.log(token)
                     // make httpOnly:true later
                     res.cookie('token', token, {httpOnly: false})
-                    res.render('homepage', { array: ['WDD', 'UI/UX', 'MOS'] })
+                                    // Read operations
+                    // QUERIES I DO NOT NEED FOR NOW!!!
+                    // const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+                    // const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+                    const getClassrooms = await getInstructor(InstructorEmailFromDB, 'classrooms')
+                    // Accessing data from database
+                    const className = getClassrooms.classrooms
+                    console.log("className: "+className)
+                    
+                    res.render('homepage', { className })
                 }
                 else{
                     res.redirect('/register')
@@ -130,30 +157,35 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
     // console.log("Classroom in app.post: " + Classroom, " Instructor Email: " +InstructorEmailFromPayLoadOfJWT)
 
-    res.render('createNewClassroom')
+    res.redirect('homepage')
 })
 app.post('/insertModule', protectRoute, (req, res)=>{
     const weekNoFromUI = req.body.weekNo
     const dayOfModuleFromUI = req.body.dayOfModule
     const titleOfModuleFromUI = req.body.titleOfModule
+    const classNameFromUI = req.body.className
     // Persisting to db
-    saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI)
-    res.render('dashboard')
+    saveToWeek(weekNoFromUI,dayOfModuleFromUI,titleOfModuleFromUI,classNameFromUI)
+    // className
+    const className = classNameFromUI
+    res.render('dashboard', {className})
 })
 app.post('/markAttendance', protectRoute, async (req, res)=>{
     const checkedNameFromUI = req.body.checkedName
     const statusFromUI = req.body.status
     const dayOfAttendanceFromUI = req.body.dayOfAttendance
+    const classNameFromUI = req.body.className
     // Email from payload of JWT
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     // Persisting to db
-    const SavedAttendance = await saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI)
+    const SavedAttendance = await saveToAttendance(checkedNameFromUI,statusFromUI,dayOfAttendanceFromUI,classNameFromUI)
     const attendanceId = SavedAttendance._id
     option = {attendances: attendanceId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
-
-    res.render('dashboard')
+    // className
+    const className = classNameFromUI
+    res.render('dashboard', {className})
 })
 app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     const studentNameFromUI = req.body.studentName
@@ -163,16 +195,18 @@ app.post('/insertNewStudent', protectRoute, async (req, res)=>{
     const studentPhoneNoFromUI = req.body.studentPhoneNo
     const genderFromUI = req.body.gender
     const dobFromUI = req.body.dob
+    const classNameFromUI = req.body.className
     // Email from payload of JWT
     const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
     // Persisting to db
-    const SavedStudent = await saveToStudent(studentNameFromUI,studentEmailFromUI,parentEmailFromUI,parentPhoneNoFromUI,studentPhoneNoFromUI,genderFromUI,dobFromUI)
+    const SavedStudent = await saveToStudent(studentNameFromUI,studentEmailFromUI,parentEmailFromUI,parentPhoneNoFromUI,studentPhoneNoFromUI,genderFromUI,dobFromUI,classNameFromUI)
     const studentId = SavedStudent._id
     option = {students: studentId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
-    
-    res.render('dashboard')
+    // className
+    const className = classNameFromUI
+    res.render('dashboard', {className})
 })
 
 
@@ -259,24 +293,26 @@ const saveToClassroom = async function(className,classDays,numberOfWeeks){
     console.log("\n>>saved to Classroom:\n", Classroom)
     return Classroom
 }
-const saveToWeek = async function(weekNo,dayOfModule,titleOfModule){
+const saveToWeek = async function(weekNo,dayOfModule,titleOfModule,className){
     var Week = await createWeek({
         weekNo,
         dayOfModule,
-        titleOfModule
+        titleOfModule,
+        className
     })
     console.log("\n>>Created Week:\n", Week)
 }
-const saveToAttendance = async function(checkedName,status,dayOfAttendance){
+const saveToAttendance = async function(checkedName,status,dayOfAttendance,className){
     var Attendance = await createAttendance({
         checkedName,
         status,
-        dayOfAttendance
+        dayOfAttendance,
+        className
     })
     console.log("\n>>Created Attendance:\n", Attendance)
     return Attendance
 }
-const saveToStudent = async function(studentName,studentEmail,parentEmail,parentPhoneNo,studentPhoneNo,gender,dob){
+const saveToStudent = async function(studentName,studentEmail,parentEmail,parentPhoneNo,studentPhoneNo,gender,dob,className){
     var Student = await createStudent({
         studentName,
         studentEmail,
@@ -284,7 +320,8 @@ const saveToStudent = async function(studentName,studentEmail,parentEmail,parent
         parentPhoneNo,
         studentPhoneNo,
         gender,
-        dob
+        dob,
+        className
     })
     console.log("\n>>Created Student:\n", Student)
     return Student
@@ -314,7 +351,7 @@ function findInstructorAndUpdate(email, object){
 // Read and populate operations
 function getInstructor(instructorEmail, collectionName){
     return db.Instructors.findOne({instructorEmail})
-    .populate(collectionName)
+    .populate(collectionName, "-_id -__v")
     .then((instructor)=>{
         // console.log("result: "+instructor)
         return instructor
