@@ -48,10 +48,11 @@ app.get('/homepage', protectRoute, async(req, res)=>{
     // const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
     const getClassrooms = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
     // Accessing data from database
+    const instructorName = getClassrooms.instructorName
     const className = getClassrooms.classrooms
     console.log("className: "+className)
     
-    res.render('homepage', { className })
+    res.render('homepage', { className,instructorName })
 })
 
 app.get('/dashboard/:className', (req, res)=>{
@@ -109,6 +110,8 @@ app.post('/login', (req, res)=>{
                     const instructorName = getClassrooms.instructorName
                     const className = getClassrooms.classrooms
                     console.log(`instructorName:  ${instructorName}  className: ${className}`)
+                    // make httpOnly:true later
+                    // res.cookie('instructorName', instructorName, {httpOnly: false})
                     
                     res.render('homepage', { className,instructorName })
                 }
