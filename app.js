@@ -59,26 +59,8 @@ app.get('/dashboard/:className', (req, res)=>{
     console.log(className, 'kkkkkkkkk')
     res.render('dashboard', {className})
 })
-app.get('/dashboard', protectRoute, async(req, res)=>{
-    // Email from payload of JWT
-
-    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
-    console.log(InstructorEmailFromPayLoadOfJWT)
-    // Read operation
-    const s = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
-    const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
-    const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
-
-    // console.log("getClassrooms: "+getClassrooms)
-    // console.log("getStudents: "+getStudents)
-    // console.log("getAttendance: "+getAttendance)
-    // Accessing data from database
-    const getClassrooms = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
-    const className = getClassrooms.classrooms
-    console.log("className: "+className)
-    
-    res.render('dashboard')
-})
+// Forbidden route
+// app.get('/dashboard', protectRoute, async(req, res)=>{})
 app.get('/createNewClassroom', (req, res)=>{
     res.render('createNewClassroom')
 })
