@@ -134,6 +134,7 @@ app.post('/createNewClassroom', protectRoute, async (req, res)=>{
     option = {classrooms: classroomId}
     // Updating to Instructor collection
     findInstructorAndUpdate(InstructorEmailFromPayLoadOfJWT, option)
+    // ***Not updating classrooms in attenndance collection***//
     // Updating to Attendance collection
     findAttendanceAndUpdate(classNameFromUI, option)
 
