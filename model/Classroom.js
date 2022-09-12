@@ -18,7 +18,7 @@ const Classroom = mongoose.model(
         weeks: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'weeks'
+                ref: 'week'
             }
         ],
         students: [

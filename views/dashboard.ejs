@@ -9,6 +9,10 @@
         .hidden{
             display:none;
         }
+        td{
+            border: 1px solid dimgrey;
+            padding: 4px;
+        }
     </style>
 </head>
 <body>
@@ -158,6 +162,24 @@
     </form>
 
     <h1>Modules Register</h1>
+    <table>
+        <tr>
+            <td>weeks</td>
+            <% weeks.forEach(element => { %>
+                <td>
+                    <p><%=element.dayOfModule  %> </p>
+                </td>
+            <% }) %>
+        </tr>
+        <tr>
+            <td>week 1</td>
+            <% weeks.forEach(element => { %>
+                <td>
+                    <p><%=element.titleOfModule  %> </p>
+                </td>
+                <% }) %>
+            </tr>
+        </table>
     <h1>Students Register</h1>
 </body>
 </html>

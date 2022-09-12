@@ -55,10 +55,24 @@ app.get('/homepage', protectRoute, async(req, res)=>{
     res.render('homepage', { className,instructorName })
 })
 
-app.get('/dashboard/:className', (req, res)=>{
+app.get('/dashboard/:className', protectRoute, async (req, res)=>{
     const className = req.params.className
     console.log(className, 'kkkkkkkkk')
-    res.render('dashboard', {className})
+    // Email from payload of JWT
+    const InstructorEmailFromPayLoadOfJWT = req.user.instructor.email
+    console.log(InstructorEmailFromPayLoadOfJWT)
+                    // Read operations
+    // const getStudents = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'students')
+    // const getAttendance = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'attendances')
+    const getClassrooms = await getInstructor(InstructorEmailFromPayLoadOfJWT, 'classrooms')
+    // Accessing Weeks from classroom collection by read and populate
+    const weeksDoc = await getClassroom(className, 'weeks')
+    // Accessing instructorName from classroom collection
+    const instructorName = getClassrooms.instructorName
+    console.log("className: "+className)
+    console.log("weeks: "+weeksDoc.weeks)
+
+    res.render('dashboard', {className,instructorName,weeks:weeksDoc.weeks})
 })
 // Forbidden route
 // app.get('/dashboard', protectRoute, async(req, res)=>{})
@@ -374,6 +388,7 @@ function findStudentAndUpdate(className,object){
         )
     })
 }
+// Not working!
 function findAttendanceAndUpdate(className,object){
     console.log( `className from app.post: ${className}, classrooms from app.post: ${object.classrooms}. Outside app.post`)
     db.Attendance.findOne({className})
@@ -395,6 +410,7 @@ function findAttendanceAndUpdate(className,object){
         )
     })
 }
+
 // Read and populate operations
 function getInstructor(instructorEmail, collectionName){
     return db.Instructors.findOne({instructorEmail})
@@ -402,6 +418,26 @@ function getInstructor(instructorEmail, collectionName){
     .then((instructor)=>{
         // console.log("result: "+instructor)
         return instructor
+    }).catch((err)=>{
+        console.log("err: "+err)
+    })
+}
+function getClassroom(className, collectionName){
+    return db.Classroom.findOne({className})
+    .populate(collectionName, "-_id -__v")
+    .then((classroom)=>{
+        // console.log("result: "+instructor)
+        return classroom
+    }).catch((err)=>{
+        console.log("err: "+err)
+    })
+}
+function getStudent(className, collectionName){
+    return db.Students.findOne({className})
+    .populate(collectionName, "-_id -__v")
+    .then((student)=>{
+        // console.log("result: "+instructor)
+        return student
     }).catch((err)=>{
         console.log("err: "+err)
     })
